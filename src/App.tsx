@@ -21,14 +21,14 @@ const BASE_RENEWABLE_SUPPLY_CURVE = [
 // Function to generate randomized curves for each game
 const generateRandomizedCurves = () => {
   const cityDemand = BASE_CITY_DEMAND_CURVE.map(value => {
-    // Add ±15% random variation to each point
-    const variation = (Math.random() - 0.5) * 0.3; // -15% to +15%
+    // Add ±10% random variation to each point (reduced from 15%)
+    const variation = (Math.random() - 0.5) * 0.2; // -10% to +10%
     return Math.max(5, Math.min(100, value * (1 + variation)));
   });
 
   const renewableSupply = BASE_RENEWABLE_SUPPLY_CURVE.map(value => {
-    // Add ±20% random variation to renewable supply (more volatile)
-    const variation = (Math.random() - 0.5) * 0.4; // -20% to +20%
+    // Add ±12% random variation to renewable supply (reduced from 20%)
+    const variation = (Math.random() - 0.5) * 0.24; // -12% to +12%
     return Math.max(0, Math.min(100, value * (1 + variation)));
   });
 
@@ -113,11 +113,11 @@ const GridGuardianGame: React.FC = () => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
 
-  // Get grid status - Improved ranges for better gameplay
+  // Get grid status - More forgiving ranges for better gameplay
   const getGridStatus = (gridLoad: number) => {
-    if (gridLoad > 10) return { status: 'SURPLUS', color: 'warning-orange', zone: 'right' };
-    if (gridLoad >= -10) return { status: 'BALANCED', color: 'aex-green', zone: 'center' };
-    if (gridLoad >= -30) return { status: 'SHORTAGE', color: 'danger-red', zone: 'left' };
+    if (gridLoad > 15) return { status: 'SURPLUS', color: 'warning-orange', zone: 'right' };
+    if (gridLoad >= -15) return { status: 'BALANCED', color: 'aex-green', zone: 'center' };
+    if (gridLoad >= -40) return { status: 'SHORTAGE', color: 'danger-red', zone: 'left' };
     return { status: 'BLACKOUT RISK!', color: 'danger-red', zone: 'left' };
   };
 
@@ -159,12 +159,14 @@ const GridGuardianGame: React.FC = () => {
 
         // Calculate profit for this tick
         let electricityCost = 0;
-        if (gridLoad > 10) {
-          electricityCost = -5; // Surplus energy - you get paid to consume!
-        } else if (gridLoad >= -10) {
+        if (gridLoad > 15) {
+          electricityCost = -8; // Surplus energy - you get paid more to consume!
+        } else if (gridLoad >= -15) {
           electricityCost = STANDARD_RATE; // Balanced - normal rates
+        } else if (gridLoad >= -30) {
+          electricityCost = PEAK_RATE * 0.8; // Moderate shortage - high but not extreme rates
         } else {
-          electricityCost = PEAK_RATE; // Shortage - expensive rates
+          electricityCost = PEAK_RATE; // Severe shortage - expensive rates
         }
 
         const btcRevenue = prevState.isMiningActive ? BTC_REVENUE : 0;
@@ -178,18 +180,20 @@ const GridGuardianGame: React.FC = () => {
 
         // Calculate grid stability - More balanced scoring
         let newStabilityScore = prevState.gridStabilityScore;
-        if (gridLoad > -15 && gridLoad < 25) {
-          newStabilityScore = Math.min(100, newStabilityScore + 0.3);
+        if (gridLoad > -20 && gridLoad < 30) {
+          newStabilityScore = Math.min(100, newStabilityScore + 0.2);
+        } else if (gridLoad < -40) {
+          newStabilityScore = Math.max(0, newStabilityScore - 1.0);
         } else {
-          newStabilityScore = Math.max(0, newStabilityScore - 0.8);
+          newStabilityScore = Math.max(0, newStabilityScore - 0.3);
         }
 
-        // Check for blackout conditions - More forgiving thresholds
+        // Check for blackout conditions - Much more forgiving thresholds
         let newConsecutiveShortage = prevState.consecutiveShortage;
         let newBlackoutCount = prevState.blackoutCount;
         let isGameOver = false;
 
-        if (gridLoad < -35) { // More forgiving blackout threshold
+        if (gridLoad < -50) { // Much more forgiving blackout threshold
           newConsecutiveShortage += 1;
           
           // Play warning sound (throttled to avoid spam)
@@ -199,12 +203,12 @@ const GridGuardianGame: React.FC = () => {
             lastWarningTimeRef.current = now;
           }
           
-          if (newConsecutiveShortage >= 16) { // 4 seconds of severe shortage before blackout
+          if (newConsecutiveShortage >= 24) { // 6 seconds of severe shortage before blackout
             isGameOver = true;
             newBlackoutCount += 1;
           }
         } else {
-          newConsecutiveShortage = 0;
+          newConsecutiveShortage = Math.max(0, newConsecutiveShortage - 1); // Gradually reduce shortage counter
         }
 
         return {
