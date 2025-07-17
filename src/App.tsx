@@ -347,19 +347,16 @@ const GridGuardianGame: React.FC = () => {
   };
 
   const showTutorialAgain = () => {
-    if (isButtonDisabled) return;
     soundGenerator.playButtonClick();
     setShowTutorial(true);
   };
 
   const showSoundSettingsModal = () => {
-    if (isButtonDisabled) return;
     soundGenerator.playButtonClick();
     setShowSoundSettings(true);
   };
 
   const closeSoundSettings = () => {
-    if (isButtonDisabled) return;
     soundGenerator.playButtonClick();
     setShowSoundSettings(false);
   };
