@@ -7,16 +7,33 @@ import Tutorial from './components/Tutorial';
 import SoundSettings from './components/SoundSettings';
 import { soundGenerator } from './utils/soundGenerator';
 
-// Game data curves (24-hour cycle)
-const CITY_DEMAND_CURVE = [
+// Base curves for 24-hour cycle (will be randomized each game)
+const BASE_CITY_DEMAND_CURVE = [
   15, 12, 10, 8, 10, 20, 35, 50, 65, 70, 75, 80,
   85, 82, 78, 75, 80, 85, 90, 85, 75, 65, 45, 25
 ];
 
-const RENEWABLE_SUPPLY_CURVE = [
+const BASE_RENEWABLE_SUPPLY_CURVE = [
   0, 0, 0, 0, 0, 5, 15, 30, 50, 70, 85, 95,
   100, 95, 85, 70, 50, 30, 15, 5, 0, 0, 0, 0
 ];
+
+// Function to generate randomized curves for each game
+const generateRandomizedCurves = () => {
+  const cityDemand = BASE_CITY_DEMAND_CURVE.map(value => {
+    // Add ±15% random variation to each point
+    const variation = (Math.random() - 0.5) * 0.3; // -15% to +15%
+    return Math.max(5, Math.min(100, value * (1 + variation)));
+  });
+
+  const renewableSupply = BASE_RENEWABLE_SUPPLY_CURVE.map(value => {
+    // Add ±20% random variation to renewable supply (more volatile)
+    const variation = (Math.random() - 0.5) * 0.4; // -20% to +20%
+    return Math.max(0, Math.min(100, value * (1 + variation)));
+  });
+
+  return { cityDemand, renewableSupply };
+};
 
 const GAME_DURATION = 60000; // 60 seconds
 const TICK_INTERVAL = 250; // 4 ticks per second
@@ -36,20 +53,27 @@ interface GameState {
   isGameOver: boolean;
   gameWon: boolean;
   consecutiveShortage: number;
+  cityDemandCurve: number[];
+  renewableSupplyCurve: number[];
 }
 
 const GridGuardianGame: React.FC = () => {
-  const [gameState, setGameState] = useState<GameState>({
-    currentTick: 0,
-    gameTime: '00:00',
-    isMiningActive: false,
-    totalProfit: 0,
-    wastedEnergy: 0,
-    gridStabilityScore: 100,
-    blackoutCount: 0,
-    isGameOver: false,
-    gameWon: false,
-    consecutiveShortage: 0,
+  const [gameState, setGameState] = useState<GameState>(() => {
+    const { cityDemand, renewableSupply } = generateRandomizedCurves();
+    return {
+      currentTick: 0,
+      gameTime: '00:00',
+      isMiningActive: false,
+      totalProfit: 0,
+      wastedEnergy: 0,
+      gridStabilityScore: 100,
+      blackoutCount: 0,
+      isGameOver: false,
+      gameWon: false,
+      consecutiveShortage: 0,
+      cityDemandCurve: cityDemand,
+      renewableSupplyCurve: renewableSupply,
+    };
   });
 
   const [isGameStarted, setIsGameStarted] = useState(false);
@@ -71,15 +95,15 @@ const GridGuardianGame: React.FC = () => {
   // Calculate current game values
   const getCurrentValues = useCallback(() => {
     const progress = gameState.currentTick / (GAME_DURATION / TICK_INTERVAL);
-    const curveIndex = Math.floor(progress * (CITY_DEMAND_CURVE.length - 1));
+    const curveIndex = Math.floor(progress * (gameState.cityDemandCurve.length - 1));
     
-    const cityDemand = CITY_DEMAND_CURVE[curveIndex] || 0;
-    const renewableSupply = RENEWABLE_SUPPLY_CURVE[curveIndex] || 0;
+    const cityDemand = gameState.cityDemandCurve[curveIndex] || 0;
+    const renewableSupply = gameState.renewableSupplyCurve[curveIndex] || 0;
     const aexLoad = gameState.isMiningActive ? AEX_MINING_LOAD : 0;
     const gridLoad = renewableSupply - cityDemand - aexLoad;
     
     return { cityDemand, renewableSupply, aexLoad, gridLoad, progress };
-  }, [gameState.currentTick, gameState.isMiningActive]);
+  }, [gameState.currentTick, gameState.isMiningActive, gameState.cityDemandCurve, gameState.renewableSupplyCurve]);
 
   // Format time display
   const formatGameTime = (tick: number) => {
@@ -89,12 +113,11 @@ const GridGuardianGame: React.FC = () => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
 
-  // Get grid status
+  // Get grid status - FIXED: Proper order and non-overlapping ranges
   const getGridStatus = (gridLoad: number) => {
-    if (gridLoad > 20) return { status: 'SURPLUS', color: 'warning-orange', zone: 'right' };
-    if (gridLoad > 5) return { status: 'BALANCED', color: 'aex-green', zone: 'center' };
-    if (gridLoad > -10) return { status: 'BALANCED', color: 'aex-green', zone: 'center' };
-    if (gridLoad > -25) return { status: 'SHORTAGE', color: 'danger-red', zone: 'left' };
+    if (gridLoad > 15) return { status: 'SURPLUS', color: 'warning-orange', zone: 'right' };
+    if (gridLoad >= -5) return { status: 'BALANCED', color: 'aex-green', zone: 'center' };
+    if (gridLoad >= -20) return { status: 'SHORTAGE', color: 'danger-red', zone: 'left' };
     return { status: 'BLACKOUT RISK!', color: 'danger-red', zone: 'left' };
   };
 
@@ -127,21 +150,21 @@ const GridGuardianGame: React.FC = () => {
 
         // Calculate current values for this tick
         const progress = newTick / (GAME_DURATION / TICK_INTERVAL);
-        const curveIndex = Math.floor(progress * (CITY_DEMAND_CURVE.length - 1));
+        const curveIndex = Math.floor(progress * (prevState.cityDemandCurve.length - 1));
         
-        const cityDemand = CITY_DEMAND_CURVE[curveIndex] || 0;
-        const renewableSupply = RENEWABLE_SUPPLY_CURVE[curveIndex] || 0;
+        const cityDemand = prevState.cityDemandCurve[curveIndex] || 0;
+        const renewableSupply = prevState.renewableSupplyCurve[curveIndex] || 0;
         const aexLoad = prevState.isMiningActive ? AEX_MINING_LOAD : 0;
         const gridLoad = renewableSupply - cityDemand - aexLoad;
 
         // Calculate profit for this tick
         let electricityCost = 0;
-        if (gridLoad > 0) {
-          electricityCost = 0; // Surplus energy is free/paid
-        } else if (gridLoad > -10) {
-          electricityCost = STANDARD_RATE;
+        if (gridLoad > 15) {
+          electricityCost = -5; // Surplus energy - you get paid to consume!
+        } else if (gridLoad >= -5) {
+          electricityCost = STANDARD_RATE; // Balanced - normal rates
         } else {
-          electricityCost = PEAK_RATE;
+          electricityCost = PEAK_RATE; // Shortage - expensive rates
         }
 
         const btcRevenue = prevState.isMiningActive ? BTC_REVENUE : 0;
