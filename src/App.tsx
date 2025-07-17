@@ -14,8 +14,8 @@ const BASE_CITY_DEMAND_CURVE = [
 ];
 
 const BASE_RENEWABLE_SUPPLY_CURVE = [
-  0, 0, 0, 0, 0, 5, 15, 30, 50, 70, 85, 95,
-  100, 95, 85, 70, 50, 30, 15, 5, 0, 0, 0, 0
+  0, 0, 0, 0, 0, 10, 25, 45, 65, 80, 90, 95,
+  100, 95, 90, 80, 65, 45, 25, 10, 0, 0, 0, 0
 ];
 
 // Function to generate randomized curves for each game
@@ -37,7 +37,7 @@ const generateRandomizedCurves = () => {
 
 const GAME_DURATION = 60000; // 60 seconds
 const TICK_INTERVAL = 250; // 4 ticks per second
-const AEX_MINING_LOAD = 40;
+const AEX_MINING_LOAD = 25; // Reduced from 40 to make it more manageable
 const STANDARD_RATE = 10;
 const PEAK_RATE = 50;
 const BTC_REVENUE = 25;
@@ -113,11 +113,11 @@ const GridGuardianGame: React.FC = () => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
 
-  // Get grid status - FIXED: Proper order and non-overlapping ranges
+  // Get grid status - Improved ranges for better gameplay
   const getGridStatus = (gridLoad: number) => {
-    if (gridLoad > 15) return { status: 'SURPLUS', color: 'warning-orange', zone: 'right' };
-    if (gridLoad >= -5) return { status: 'BALANCED', color: 'aex-green', zone: 'center' };
-    if (gridLoad >= -20) return { status: 'SHORTAGE', color: 'danger-red', zone: 'left' };
+    if (gridLoad > 10) return { status: 'SURPLUS', color: 'warning-orange', zone: 'right' };
+    if (gridLoad >= -10) return { status: 'BALANCED', color: 'aex-green', zone: 'center' };
+    if (gridLoad >= -30) return { status: 'SHORTAGE', color: 'danger-red', zone: 'left' };
     return { status: 'BLACKOUT RISK!', color: 'danger-red', zone: 'left' };
   };
 
@@ -159,9 +159,9 @@ const GridGuardianGame: React.FC = () => {
 
         // Calculate profit for this tick
         let electricityCost = 0;
-        if (gridLoad > 15) {
+        if (gridLoad > 10) {
           electricityCost = -5; // Surplus energy - you get paid to consume!
-        } else if (gridLoad >= -5) {
+        } else if (gridLoad >= -10) {
           electricityCost = STANDARD_RATE; // Balanced - normal rates
         } else {
           electricityCost = PEAK_RATE; // Shortage - expensive rates
@@ -176,20 +176,20 @@ const GridGuardianGame: React.FC = () => {
           newWastedEnergy += gridLoad;
         }
 
-        // Calculate grid stability
+        // Calculate grid stability - More balanced scoring
         let newStabilityScore = prevState.gridStabilityScore;
-        if (gridLoad > -10 && gridLoad < 20) {
-          newStabilityScore = Math.min(100, newStabilityScore + 0.5);
+        if (gridLoad > -15 && gridLoad < 25) {
+          newStabilityScore = Math.min(100, newStabilityScore + 0.3);
         } else {
-          newStabilityScore = Math.max(0, newStabilityScore - 1);
+          newStabilityScore = Math.max(0, newStabilityScore - 0.8);
         }
 
-        // Check for blackout conditions
+        // Check for blackout conditions - More forgiving thresholds
         let newConsecutiveShortage = prevState.consecutiveShortage;
         let newBlackoutCount = prevState.blackoutCount;
         let isGameOver = false;
 
-        if (gridLoad < -25) {
+        if (gridLoad < -35) { // More forgiving blackout threshold
           newConsecutiveShortage += 1;
           
           // Play warning sound (throttled to avoid spam)
@@ -199,7 +199,7 @@ const GridGuardianGame: React.FC = () => {
             lastWarningTimeRef.current = now;
           }
           
-          if (newConsecutiveShortage >= 8) { // 2 seconds of blackout risk
+          if (newConsecutiveShortage >= 16) { // 4 seconds of severe shortage before blackout
             isGameOver = true;
             newBlackoutCount += 1;
           }
@@ -537,7 +537,15 @@ const GridGuardianGame: React.FC = () => {
               {gameState.gameWon ? (
                 "Excellent work, Grid Guardian! You've successfully demonstrated how Agile EnergyX uses flexible computing to create value and support Japan's energy future."
               ) : (
-                "The grid couldn't handle the demand. Try activating miners during surplus periods and deactivating during shortages."
+                <div className="space-y-2">
+                  <p>"The grid couldn't handle the demand. Here are some strategies:"</p>
+                  <ul className="text-sm text-left space-y-1 mt-2">
+                    <li>• <strong>Morning (6-12):</strong> Activate miners when solar energy rises</li>
+                    <li>• <strong>Midday (12-15):</strong> Peak solar - great time for mining</li>
+                    <li>• <strong>Evening (17-21):</strong> High demand - deactivate miners</li>
+                    <li>• <strong>Night (22-6):</strong> Low demand but no solar - be careful</li>
+                  </ul>
+                </div>
               )}
             </div>
           </div>
@@ -555,7 +563,7 @@ const GridGuardianGame: React.FC = () => {
 
   // Main game screen
   return (
-    <div className={`min-h-screen grid-guardian-bg p-4 ${gameState.consecutiveShortage >= 4 ? 'blackout-flash' : ''}`}>
+    <div className={`min-h-screen grid-guardian-bg p-4 ${gameState.consecutiveShortage >= 8 ? 'blackout-flash' : ''}`}>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-6">
