@@ -252,6 +252,7 @@ const GridGuardianGame: React.FC = () => {
     
     try {
       setIsButtonDisabled(true);
+      console.log('Starting game...');
       soundGenerator.playButtonClick();
       
       if (!hasSeenTutorial) {
@@ -266,6 +267,9 @@ const GridGuardianGame: React.FC = () => {
       setIsGameStarted(true);
       setIsGameActive(true);
       setShowEndScreen(false);
+      
+      // Generate new randomized curves for each game
+      const { cityDemand, renewableSupply } = generateRandomizedCurves();
       setGameState({
         currentTick: 0,
         gameTime: '00:00',
@@ -277,6 +281,8 @@ const GridGuardianGame: React.FC = () => {
         isGameOver: false,
         gameWon: false,
         consecutiveShortage: 0,
+        cityDemandCurve: cityDemand,
+        renewableSupplyCurve: renewableSupply,
       });
       setIsButtonDisabled(false);
     } catch (error) {
@@ -298,6 +304,9 @@ const GridGuardianGame: React.FC = () => {
       setIsGameStarted(true);
       setIsGameActive(true);
       setShowEndScreen(false);
+      
+      // Generate new randomized curves for each game
+      const { cityDemand, renewableSupply } = generateRandomizedCurves();
       setGameState({
         currentTick: 0,
         gameTime: '00:00',
@@ -309,6 +318,8 @@ const GridGuardianGame: React.FC = () => {
         isGameOver: false,
         gameWon: false,
         consecutiveShortage: 0,
+        cityDemandCurve: cityDemand,
+        renewableSupplyCurve: renewableSupply,
       });
     } catch (error) {
       console.error('Error starting game without tutorial:', error);
@@ -350,8 +361,10 @@ const GridGuardianGame: React.FC = () => {
   };
 
   const toggleMining = async () => {
+    console.log('Toggle mining clicked, game over:', gameState.isGameOver);
     if (!gameState.isGameOver) {
       const newMiningState = !gameState.isMiningActive;
+      console.log('Toggling mining from', gameState.isMiningActive, 'to', newMiningState);
       
       // Play sound effects
       if (newMiningState) {
@@ -388,6 +401,9 @@ const GridGuardianGame: React.FC = () => {
     setIsGameActive(false);
     setShowEndScreen(false);
     setShowTutorial(false);
+    
+    // Generate new randomized curves for reset
+    const { cityDemand, renewableSupply } = generateRandomizedCurves();
     setGameState({
       currentTick: 0,
       gameTime: '00:00',
@@ -399,6 +415,8 @@ const GridGuardianGame: React.FC = () => {
       isGameOver: false,
       gameWon: false,
       consecutiveShortage: 0,
+      cityDemandCurve: cityDemand,
+      renewableSupplyCurve: renewableSupply,
     });
   };
 
