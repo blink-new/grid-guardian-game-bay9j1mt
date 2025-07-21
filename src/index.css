@@ -1,0 +1,241 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Grid Guardian Color Palette */
+    --primary-bg: 210 23% 14%; /* #1a202c */
+    --accent-blue: 210 100% 42%; /* #0078D4 */
+    --aex-green: 152 100% 29%; /* #009650 */
+    --warning-orange: 33 100% 50%; /* #FF8C00 */
+    --danger-red: 349 96% 43%; /* #D90429 */
+    --text-primary: 0 0% 100%; /* #ffffff */
+    --text-secondary: 214 15% 69%; /* #a0aec0 */
+    
+    /* Shadcn defaults adapted */
+    --background: var(--primary-bg);
+    --foreground: var(--text-primary);
+    --card: var(--primary-bg);
+    --card-foreground: var(--text-primary);
+    --popover: var(--primary-bg);
+    --popover-foreground: var(--text-primary);
+    --primary: var(--accent-blue);
+    --primary-foreground: var(--text-primary);
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: var(--text-primary);
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: var(--text-secondary);
+    --accent: var(--accent-blue);
+    --accent-foreground: var(--text-primary);
+    --destructive: var(--danger-red);
+    --destructive-foreground: var(--text-primary);
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: var(--accent-blue);
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+
+    font-family: Inter, sans-serif;
+  }
+}
+
+@layer components {
+  .grid-guardian-bg {
+    background: hsl(var(--primary-bg));
+  }
+  
+  .aex-green {
+    color: hsl(var(--aex-green)) !important;
+  }
+  
+  .aex-green-bg {
+    background-color: hsl(var(--aex-green));
+  }
+  
+  .accent-blue {
+    color: hsl(var(--accent-blue)) !important;
+  }
+  
+  .accent-blue-bg {
+    background-color: hsl(var(--accent-blue));
+  }
+  
+  .warning-orange {
+    color: hsl(var(--warning-orange)) !important;
+  }
+  
+  .warning-orange-bg {
+    background-color: hsl(var(--warning-orange));
+  }
+  
+  .danger-red {
+    color: hsl(var(--danger-red)) !important;
+  }
+  
+  .danger-red-bg {
+    background-color: hsl(var(--danger-red));
+  }
+  
+  .text-secondary {
+    color: hsl(var(--text-secondary)) !important;
+  }
+  
+  /* Ensure text is visible */
+  .text-white {
+    color: #fff !important;
+  }
+  
+  .text-slate-200 {
+    color: #e2e8f0 !important;
+  }
+  
+  .text-slate-400 {
+    color: #94a3b8 !important;
+  }
+  
+  .gauge-glow {
+    box-shadow: 0 0 20px hsl(210deg 100% 42% / 30%);
+  }
+  
+  .miner-active-glow {
+    box-shadow: 0 0 30px hsl(152deg 100% 29% / 50%);
+    animation: pulse-green 2s infinite;
+  }
+  
+  @keyframes pulse-green {
+    0%, 100% {
+      box-shadow: 0 0 30px hsl(152deg 100% 29% / 50%);
+    }
+
+    50% {
+      box-shadow: 0 0 40px hsl(152deg 100% 29% / 80%);
+    }
+  }
+  
+  .grid-meter-needle {
+    transition: transform 0.3s ease-out;
+    transform-origin: bottom center;
+  }
+  
+  .blackout-flash {
+    animation: flash-red 0.5s infinite;
+  }
+  
+  @keyframes flash-red {
+    0%, 100% { background-color: transparent; }
+    50% { background-color: hsl(349deg 96% 43% / 20%); }
+  }
+
+  /* Enhanced animations for better visual feedback */
+  .energy-bar-glow {
+    animation: energy-flow 2s ease-in-out infinite;
+  }
+  
+  @keyframes energy-flow {
+    0%, 100% { 
+      box-shadow: 0 0 10px currentcolor; 
+    }
+
+    50% { 
+      box-shadow: 0 0 20px currentcolor, 0 0 30px currentcolor; 
+    }
+  }
+
+  .grid-status-critical {
+    animation: critical-pulse 1s ease-in-out infinite;
+  }
+  
+  @keyframes critical-pulse {
+    0%, 100% { 
+      transform: scale(1);
+      filter: brightness(1);
+    }
+
+    50% { 
+      transform: scale(1.05);
+      filter: brightness(1.2);
+    }
+  }
+
+  .mining-active-indicator {
+    animation: mining-pulse 1.5s ease-in-out infinite;
+  }
+  
+  @keyframes mining-pulse {
+    0%, 100% { 
+      opacity: 70%;
+      transform: scale(1);
+    }
+
+    50% { 
+      opacity: 100%;
+      transform: scale(1.1);
+    }
+  }
+
+  .card-hover-glow {
+    transition: all 0.3s ease;
+  }
+  
+  .card-hover-glow:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Improved gauge animations */
+  .gauge-fill {
+    transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .needle-smooth {
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Status indicator animations */
+  .status-indicator {
+    animation: status-glow 2s ease-in-out infinite;
+  }
+  
+  @keyframes status-glow {
+    0%, 100% { 
+      box-shadow: 0 0 5px currentcolor; 
+    }
+
+    50% { 
+      box-shadow: 0 0 15px currentcolor, 0 0 25px currentcolor; 
+    }
+  }
+
+  /* Button improvements for better contrast */
+  .button-primary {
+    background-color: hsl(var(--accent-blue));
+    color: white;
+    border: none;
+  }
+  
+  .button-primary:hover {
+    background-color: hsl(var(--aex-green));
+  }
+  
+  .button-secondary {
+    background-color: hsl(var(--primary-bg));
+    color: hsl(var(--text-secondary));
+    border: 1px solid hsl(240deg 3.7% 25%);
+  }
+  
+  .button-secondary:hover {
+    background-color: hsl(240deg 3.7% 25%);
+    color: white;
+  }
+}
